@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Never accidentally commit browser data or large app caches
+configs/.config/BraveSoftware/
+configs/.config/chromium/
+configs/.config/google-chrome*/
+configs/.config/vivaldi*/
+
+# Review git credential config before committing — strip any inline tokens
+# configs/.config/git/config is included but check it contains no secrets
