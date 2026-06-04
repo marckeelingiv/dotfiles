@@ -1,0 +1,2 @@
+ACTION=="add|change", SUBSYSTEM=="usb", ATTR{power/control}="on"
+ACTION=="add|change", SUBSYSTEM=="pci", ATTR{power/control}="on"
