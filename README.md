@@ -66,6 +66,7 @@ Re-enable your preferred Git credential helper on the new machine. This backup t
 | Starship | `~/.config/starship.toml` |
 | Mimeapps | `~/.config/mimeapps.list` |
 | Shell rc files | `~/.bashrc`, `~/.zshrc` (when present) |
+| System udev rules | `/etc/udev/rules.d/` (requires `sudo` for restore) |
 
 ## What's NOT backed up
 

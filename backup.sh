@@ -65,6 +65,18 @@ for rc in .zshrc .bashrc; do
     fi
 done
 
+# System Configurations (udev rules, etc.)
+SYSTEM_UDEV_SRC="/etc/udev/rules.d"
+SYSTEM_UDEV_DEST="$CONFIGS_DIR/system/udev/rules.d"
+
+if [ -d "$SYSTEM_UDEV_SRC" ]; then
+    mkdir -p "$SYSTEM_UDEV_DEST"
+    rsync -a --delete --copy-links "$SYSTEM_UDEV_SRC/" "$SYSTEM_UDEV_DEST/"
+    echo "  synced  system/udev/rules.d"
+else
+    echo "  skipped system/udev/rules.d (not found)"
+fi
+
 echo "---"
 echo "Done. Review git diff before committing:"
 echo "  cd $REPO_DIR && git diff --stat"

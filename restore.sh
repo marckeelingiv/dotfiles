@@ -70,6 +70,20 @@ for rc in .zshrc .bashrc; do
     fi
 done
 
+# System Configurations (udev rules, etc.)
+SYSTEM_UDEV_SRC="$CONFIGS_DIR/system/udev/rules.d"
+SYSTEM_UDEV_DEST="/etc/udev/rules.d"
+
+if [ -d "$SYSTEM_UDEV_SRC" ] && [ "$(ls -A "$SYSTEM_UDEV_SRC")" ]; then
+    echo "Restoring system udev rules to $SYSTEM_UDEV_DEST (requires sudo)..."
+    sudo mkdir -p "$SYSTEM_UDEV_DEST"
+    sudo rsync -a --delete "$SYSTEM_UDEV_SRC/" "$SYSTEM_UDEV_DEST/"
+    echo "Reloading udev rules..."
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+    echo "  restored system/udev/rules.d"
+fi
+
 echo "---"
 echo "Done."
 echo ""

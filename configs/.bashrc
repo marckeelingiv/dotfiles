@@ -29,3 +29,4 @@ workon() {
     return 1
   fi
 }
+. "$HOME/.cargo/env"
