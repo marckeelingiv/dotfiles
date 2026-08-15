@@ -1,0 +1,5 @@
+#!/bin/bash
+MODE=${1:-auto}
+for d in /sys/bus/pci/devices/*/power/control /sys/bus/usb/devices/*/power/control; do
+  [ -f "$d" ] && echo "$MODE" > "$d" 2>/dev/null || true
+done

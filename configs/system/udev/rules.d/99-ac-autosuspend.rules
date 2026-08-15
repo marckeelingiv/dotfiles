@@ -1,0 +1,2 @@
+SUBSYSTEM=="power_supply", ATTR{type}=="Mains", ATTR{online}=="1", RUN+="/usr/bin/systemd-run --no-block --collect --unit=ac-autosuspend-off /home/marc/.config/omarchy/bin/omarchy-pci-autosuspend on"
+SUBSYSTEM=="power_supply", ATTR{type}=="Mains", ATTR{online}=="0", RUN+="/usr/bin/systemd-run --no-block --collect --unit=ac-autosuspend-on /home/marc/.config/omarchy/bin/omarchy-pci-autosuspend auto"

@@ -1,3 +1,5 @@
 [tools]
+codex = "latest"
 flutter = "latest"
+gemini = { version = "latest", allow_builds = ["@github/keytar", "node-pty"] }
 node = "26.1.0"
