@@ -1,6 +1,6 @@
 # config-backup
 
-Snapshots of my Arch Linux + Omarchy desktop configs. Clone this repo on a new machine to restore the full setup.
+Portable Arch Linux, Omarchy, desktop, and AI-tool configuration snapshots. Clone this repo on a new machine to restore reusable settings without copying credentials or machine-specific runtime state.
 
 ## Backup (current machine)
 
@@ -11,9 +11,7 @@ git commit -m "chore: backup $(date +%Y-%m-%d)"
 git push
 ```
 
-> Before committing, check `~/.config/git/config` for any inline credentials — those should not be committed.
-
-Managed config directories are restored as exact snapshots, so files removed from the backup will also be removed on restore.
+Before committing, review the diff. The backup script excludes credentials, browser profiles, caches, sessions, databases, logs, and generated dependencies. Restore does not delete destination-only files, so existing authentication and app state are retained.
 
 ## Restore (new machine)
 
@@ -38,38 +36,21 @@ cd ~/dev/config-backup
 ./restore.sh
 ```
 
-### 4. Re-authenticate git
+### 4. Re-authenticate services
 
-Re-enable your preferred Git credential helper on the new machine. This backup tracks the helper configuration, but you still need to log back in locally.
+Sign in again to Git, AI providers, cloud CLIs, browsers, and password managers. Their credentials are intentionally not stored in this repository.
 
 ## What's backed up
 
-| Config | Path |
-|--------|------|
-| Hyprland | `~/.config/hypr/` |
-| Waybar | `~/.config/waybar/` |
-| Walker | `~/.config/walker/` |
-| Omarchy user config | `~/.config/omarchy/` |
-| Swayosd | `~/.config/swayosd/` |
-| Autostart | `~/.config/autostart/` |
-| Environment | `~/.config/environment.d/` |
-| Ghostty | `~/.config/ghostty/` |
-| Alacritty | `~/.config/alacritty/` |
-| Neovim | `~/.config/nvim/` |
-| Tmux | `~/.config/tmux/` |
-| Lazygit | `~/.config/lazygit/` |
-| Lazydocker | `~/.config/lazydocker/` |
-| Git | `~/.config/git/` |
-| Btop | `~/.config/btop/` |
-| Fastfetch | `~/.config/fastfetch/` |
-| Mise | `~/.config/mise/` |
-| Starship | `~/.config/starship.toml` |
-| Mimeapps | `~/.config/mimeapps.list` |
-| Shell rc files | `~/.bashrc`, `~/.zshrc` (when present) |
-| System udev rules | `/etc/udev/rules.d/` (requires `sudo` for restore) |
+- All portable settings in `~/.config/`, including desktop, terminal, editor, and application configuration.
+- AI-tool configuration in `~/.agents/`, `~/.antigravitycli/`, `~/.claude/`, `~/.codex/`, `~/.gemini/`, and `~/.pi/`.
+- Shell configuration: `~/.bashrc`, `~/.profile`, `~/.zshrc`, and `~/.XCompose` when present.
+- System udev rules in `/etc/udev/rules.d/`.
 
-## What's NOT backed up
+## What's excluded
 
-- `~/.config/mako/` — managed by omarchy's theme system; restored automatically by omarchy
-- `~/.ssh/` — private keys (back up separately and securely)
-- Browser profiles — too large and app-managed
+- Credentials, tokens, API keys, certificates, and authentication databases.
+- `~/.bash_profile`, because it contains a DigitalOcean personal-access token on this machine.
+- Browser and password-manager profiles.
+- Caches, logs, sessions, history, workspace state, databases, and generated dependencies.
+- `~/.ssh/` and all other non-configuration home directories.

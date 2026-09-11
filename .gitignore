@@ -9,11 +9,33 @@ wheels/
 # Virtual environments
 .venv
 
-# Never accidentally commit browser data or large app caches
-configs/.config/BraveSoftware/
-configs/.config/chromium/
-configs/.config/google-chrome*/
-configs/.config/vivaldi*/
-
-# Review git credential config before committing — strip any inline tokens
-# configs/.config/git/config is included but check it contains no secrets
+# Backup and restore scripts exclude credentials, browser profiles, caches,
+# session history, generated dependencies, and databases before files reach
+# configs/. Do not bypass those filters for GitHub backups.
+configs/.config/Antigravity/app_storage.json
+configs/.config/Antigravity/machineid
+configs/.config/Antigravity/Preferences
+configs/.config/Antigravity/User/workspaceStorage/
+configs/.config/Antigravity/workspace/
+configs/.config/.android/studio/agent/conversations/
+configs/.config/Google/AndroidStudio*/workspace/
+configs/.config/Google/AndroidStudio*/options/recentProjects.xml
+configs/.config/Google/AndroidStudio*/options/other.xml
+configs/.config/Google/AndroidStudio*/options/trusted-paths.xml
+configs/.config/herdr/session.json
+configs/.config/lightdash/
+configs/.config/obsidian/id
+configs/.config/obsidian/[0-9a-f]*.json
+configs/home/.antigravitycli/
+configs/home/.codex/ambient-suggestions/
+configs/home/.codex/.codex-global-state.json
+configs/home/.codex/.codex-global-state.json.bak
+configs/home/.codex/installation_id
+configs/home/.codex/tui-thread-reference-capabilities/
+configs/home/.gemini/google_accounts.json
+configs/home/.gemini/installation_id
+configs/home/.gemini/projects.json
+configs/home/.gemini/state.json
+configs/home/.gemini/trustedFolders.json
+configs/home/.gemini/config/config.json
+configs/home/.pi/agent/trust.json

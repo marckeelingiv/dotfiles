@@ -1,0 +1,16 @@
+{
+  "defaultModel": "accounts/fireworks/models/glm-5p3-flash",
+  "defaultProvider": "fireworks",
+  "lastChangelogVersion": "0.85.1",
+  "packages": [
+    "npm:@ollama/pi-web-search",
+    "npm:@tintinweb/pi-subagents",
+    "npm:pi-lens",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:pi-cache-guardian",
+    "npm:pi-cache-insight"
+  ],
+  "theme": "dark",
+  "defaultThinkingLevel": "high",
+  "hideThinkingBlock": true
+}

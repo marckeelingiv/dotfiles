@@ -1,0 +1,13 @@
+<application>
+  <component name="ActionsLocalSummary">
+    <e n="com.android.tools.adtui.actions.DropDownAction">
+      <i c="1" l="1788408546510" />
+    </e>
+    <e n="com.android.tools.idea.devicemanagerv2.DeviceManagerPanel$toAnAction$2">
+      <i c="1" l="1788408548334" />
+    </e>
+    <e n="com.intellij.openapi.wm.impl.SquareAnActionButton">
+      <i c="3" l="1788408825097" />
+    </e>
+  </component>
+</application>

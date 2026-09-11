@@ -18,7 +18,7 @@ application/xml=nvim.desktop
 text/xml=nvim.desktop
 inode/directory=org.gnome.Nautilus.desktop
 image/png=imv.desktop
-image/jpeg=imv.desktop
+image/jpeg=dev.tensaku.Tensaku.desktop
 image/gif=imv.desktop
 image/webp=imv.desktop
 image/bmp=imv.desktop
@@ -55,6 +55,10 @@ application/x-extension-xhtml=zen-browser.desktop
 application/x-extension-xht=zen-browser.desktop
 x-scheme-handler/webcal=brave-browser.desktop
 x-scheme-handler/antigravity=antigravity.desktop
+x-scheme-handler/codex=chatgpt.desktop
+application/json=codium.desktop
+text/markdown=codium.desktop
+text/x-markdown=codium.desktop
 
 [Added Associations]
 x-scheme-handler/http=zen-browser.desktop;
@@ -67,3 +71,7 @@ application/x-extension-shtml=zen-browser.desktop;
 application/xhtml+xml=zen-browser.desktop;
 application/x-extension-xhtml=zen-browser.desktop;
 application/x-extension-xht=zen-browser.desktop;
+image/jpeg=dev.tensaku.Tensaku.desktop;
+text/markdown=codium.desktop;
+text/x-markdown=codium.desktop;
+

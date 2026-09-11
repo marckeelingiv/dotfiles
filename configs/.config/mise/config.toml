@@ -1,5 +1,10 @@
 [tools]
-codex = "latest"
 flutter = "latest"
 gemini = { version = "latest", allow_builds = ["@github/keytar", "node-pty"] }
+gh = "latest"
 node = "26.1.0"
+opencode = "latest"
+pi = "latest"
+
+[settings.upgrade]
+auto_prune = false

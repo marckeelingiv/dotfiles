@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delegate Tabs"
+  short_description: "Coordinate persistent Herdr agent tabs"
+  default_prompt: "Use $delegate-tabs to initialize this project and coordinate persistent external agents."

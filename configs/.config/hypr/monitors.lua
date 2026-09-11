@@ -1,15 +1,15 @@
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
 -- List current monitors and supported resolutions with: hyprctl monitors all
 
-local omarchy_gdk_scale = 1
-local omarchy_monitor_scale = 1
+local omarchy_gdk_scale = 3
+local omarchy_monitor_scale = 3
 
 hl.env("GDK_SCALE", tostring(omarchy_gdk_scale))
 
--- Docked layout: DP-11 on the left and HDMI-A-1 on the right.
-hl.monitor({ output = "eDP-1", disabled = true })
-hl.monitor({ output = "DP-11", mode = "1920x1080@60", position = "0x0", scale = omarchy_monitor_scale })
-hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "1920x0", scale = omarchy_monitor_scale })
+-- Keep every connected display active and let Hyprland arrange them dynamically.
+hl.monitor({ output = "eDP-1", mode = "preferred", position = "auto", scale = omarchy_monitor_scale })
+hl.monitor({ output = "DP-11", mode = "1920x1080@60", position = "auto", scale = omarchy_monitor_scale })
+hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@60", position = "auto", scale = omarchy_monitor_scale })
 
 -- Configure a specific monitor.
 -- hl.monitor({ output = "DP-2", mode = "2560x1440@144", position = "0x0", scale = 1 })

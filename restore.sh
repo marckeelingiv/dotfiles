@@ -3,74 +3,93 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIGS_DIR="$REPO_DIR/configs"
-CONFIG_DEST="$HOME/.config"
 
-CONFIG_DIRS=(
-    hypr
-    waybar
-    walker
-    omarchy
-    swayosd
-    autostart
-    environment.d
-    ghostty
-    alacritty
-    nvim
-    tmux
-    lazygit
-    lazydocker
-    git
-    btop
-    fastfetch
-    mise
+RSYNC_EXCLUDES=(
+    --exclude='.git/' --exclude='node_modules/' --exclude='__pycache__/'
+    --exclude='.cache/' --exclude='cache/' --exclude='Cache/' --exclude='Crashpad/' --exclude='CachedData/'
+    --exclude='CachedConfigurations/' --exclude='CachedExtensionVSIXs/' --exclude='CachedProfilesData/'
+    --exclude='Code Cache/' --exclude='GPUCache/' --exclude='DawnGraphiteCache/' --exclude='DawnWebGPUCache/'
+    --exclude='blob_storage/' --exclude='logs/' --exclude='log/' --exclude='history/' --exclude='sessions/' --exclude='History/'
+    --exclude='workspaceStorage/' --exclude='globalStorage/' --exclude='Local Storage/' --exclude='Session Storage/'
+    --exclude='IndexedDB/' --exclude='Cookies*' --exclude='cookie' --exclude='*.cookie' --exclude='Singleton*'
+    --exclude='Trust Tokens*' --exclude='Shared Dictionary/' --exclude='SharedStorage*' --exclude='DIPS*' --exclude='WebStorage/'
+    --exclude='auth.json' --exclude='credentials*'
+    --exclude='*credential*' --exclude='*token*' --exclude='*oauth*' --exclude='*secret*' --exclude='*api_key*' --exclude='*apikey*'
+    --exclude='*.pem' --exclude='*.key' --exclude='*.p12' --exclude='*.kdbx' --exclude='*.sqlite*'
+    --exclude='*.db*' --exclude='*.log' --exclude='*.tmp' --exclude='*.jsonl' --exclude='.tmp/' --exclude='tmp/'
+    --exclude='1Password/' --exclude='Bitwarden/' --exclude='Signal/' --exclude='BraveSoftware/'
+    --exclude='chromium/' --exclude='chromium-headless/' --exclude='google-chrome*/'
+    --exclude='microsoft-edge*/' --exclude='vivaldi*/' --exclude='zen/' --exclude='Cursor/'
+    --exclude='VSCodium/' --exclude='Codex/' --exclude='gh/' --exclude='gcloud/' --exclude='doctl/'
+    --exclude='configstore/' --exclude='antigravity*/' --exclude='backups/' --exclude='backup/' --exclude='file-history/'
+    --exclude='.android/avd/'
+    --exclude='paste-cache/' --exclude='plans/' --exclude='projects/' --exclude='shell-snapshots/' --exclude='shell_snapshots/'
+    --exclude='tasks/' --exclude='packages/' --exclude='generated_images/' --exclude='models_cache.json'
+    --exclude='tools/' --exclude='*.asar' --exclude='*.lock' --exclude='*.pid' --exclude='*.dmp'
+    --exclude='DevToolsActivePort' --exclude='Network Persistent State' --exclude='TransportSecurity'
+    --exclude='Dictionaries/' --exclude='event-log-metadata/' --exclude='draftsRecover/'
+    --exclude='workspace/' --exclude='app_storage.json' --exclude='machineid' --exclude='id'
+    --exclude='installation_id' --exclude='google_accounts.json' --exclude='projects.json'
+    --exclude='trust.json' --exclude='session.json' --exclude='.codex-global-state.json'
+    --exclude='.codex-global-state.json.bak'
+    --exclude='Preferences' --exclude='ambient-suggestions/'
+    --exclude='tui-thread-reference-capabilities/' --exclude='state.json'
+    --exclude='trustedFolders.json' --exclude='obsidian/[0-9a-f]*.json'
+    --exclude='.android/studio/agent/conversations/'
+    --exclude='Google/AndroidStudio*/options/recentProjects.xml'
 )
 
-CONFIG_FILES=(
-    starship.toml
-    mimeapps.list
-)
+HOME_CONFIG_DIRS=(.agents .claude .codex .gemini .pi)
+
+restore_snapshot() {
+    local src="$1"
+    local dest="$2"
+    local extra_excludes=()
+
+    case "$dest" in
+        "$HOME/.claude"|"$HOME/.codex") extra_excludes+=(--exclude='plugins/') ;;
+        "$HOME/.config") extra_excludes+=(
+            --exclude='lightdash/'
+            --exclude='Google/AndroidStudio*/options/other.xml'
+            --exclude='Google/AndroidStudio*/options/trusted-paths.xml'
+        ) ;;
+        "$HOME/.gemini") extra_excludes+=(--exclude='config/config.json') ;;
+    esac
+
+    mkdir -p "$dest"
+    # Do not delete destination-only files, including credentials and app state.
+    rsync -a "${RSYNC_EXCLUDES[@]}" "${extra_excludes[@]}" "$src/" "$dest/"
+}
 
 if [ ! -d "$CONFIGS_DIR" ]; then
     echo "Error: $CONFIGS_DIR not found. Are you running from the repo root?"
     exit 1
 fi
 
-echo "Restoring configs from $CONFIGS_DIR"
+echo "Restoring portable configuration from $CONFIGS_DIR"
 echo "---"
 
-mkdir -p "$CONFIG_DEST"
+if [ -d "$CONFIGS_DIR/.config" ]; then
+    restore_snapshot "$CONFIGS_DIR/.config" "$HOME/.config"
+    echo "  restored .config"
+fi
 
-for dir in "${CONFIG_DIRS[@]}"; do
-    src="$CONFIGS_DIR/.config/$dir"
-    dest="$CONFIG_DEST/$dir"
+for dir in "${HOME_CONFIG_DIRS[@]}"; do
+    src="$CONFIGS_DIR/home/$dir"
     if [ -d "$src" ]; then
-        mkdir -p "$dest"
-        rsync -a --delete "$src/" "$dest/"
-        echo "  restored .config/$dir"
-    else
-        echo "  skipped  .config/$dir (not in backup)"
+        restore_snapshot "$src" "$HOME/$dir"
+        echo "  restored $dir"
     fi
 done
 
-for file in "${CONFIG_FILES[@]}"; do
-    src="$CONFIGS_DIR/.config/$file"
-    dest="$CONFIG_DEST/$file"
+for rc in .zshrc .bashrc .profile .XCompose; do
+    src="$CONFIGS_DIR/home/$rc"
     if [ -f "$src" ]; then
-        cp "$src" "$dest"
-        echo "  restored .config/$file"
-    else
-        echo "  skipped  .config/$file (not in backup)"
-    fi
-done
-
-for rc in .zshrc .bashrc; do
-    if [ -f "$CONFIGS_DIR/$rc" ]; then
-        cp "$CONFIGS_DIR/$rc" "$HOME/$rc"
+        cp "$src" "$HOME/$rc"
         echo "  restored $rc"
     fi
 done
 
-# System Configurations (udev rules, etc.)
 SYSTEM_UDEV_SRC="$CONFIGS_DIR/system/udev/rules.d"
 SYSTEM_UDEV_DEST="/etc/udev/rules.d"
 
@@ -78,16 +97,10 @@ if [ -d "$SYSTEM_UDEV_SRC" ] && [ "$(ls -A "$SYSTEM_UDEV_SRC")" ]; then
     echo "Restoring system udev rules to $SYSTEM_UDEV_DEST (requires sudo)..."
     sudo mkdir -p "$SYSTEM_UDEV_DEST"
     sudo rsync -a --delete "$SYSTEM_UDEV_SRC/" "$SYSTEM_UDEV_DEST/"
-    echo "Reloading udev rules..."
     sudo udevadm control --reload-rules
     sudo udevadm trigger
     echo "  restored system/udev/rules.d"
 fi
 
 echo "---"
-echo "Done."
-echo ""
-echo "Next steps on a new machine:"
-echo "  1. Install omarchy: https://github.com/basecamp/omarchy"
-echo "  2. Run omarchy setup to restore mako/waybar theming (managed by omarchy, not this backup)"
-echo "  3. Re-authenticate any credential helpers in ~/.config/git/config"
+echo "Done. Re-authenticate services whose credentials were intentionally excluded."

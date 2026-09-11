@@ -1,0 +1,17 @@
+<application>
+  <component name="AiPluginSettings">
+    <option name="enableAutomaticGenerationOutlines" value="true" />
+    <option name="gcpProjectByEmail">
+      <map>
+        <entry key="marckeelingiv@gmail.com">
+          <value>
+            <GcpProjectSettings>
+              <option name="gcpProjectId" value="swift-spirit-z92sd" />
+              <option name="gcpProjectName" value="swift-spirit-z92sd" />
+            </GcpProjectSettings>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</application>
