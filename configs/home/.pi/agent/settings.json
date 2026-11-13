@@ -1,14 +1,18 @@
 {
-  "defaultModel": "accounts/fireworks/models/glm-5p3-flash",
-  "defaultProvider": "fireworks",
-  "lastChangelogVersion": "0.85.1",
+  "defaultModel": "gpt-6.1-sol",
+  "defaultProvider": "openai-codex",
+  "lastChangelogVersion": "1.0.4",
   "packages": [
     "npm:@ollama/pi-web-search",
     "npm:@tintinweb/pi-subagents",
     "npm:pi-lens",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:pi-cache-guardian",
-    "npm:pi-cache-insight"
+    "npm:pi-cache-insight",
+    "npm:pi-subagents",
+    "npm:@juicesharp/rpiv-todo",
+    "npm:pi-background-tasks",
+    "npm:pi-web-access"
   ],
   "theme": "dark",
   "defaultThinkingLevel": "high",

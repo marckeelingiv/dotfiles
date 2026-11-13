@@ -21,6 +21,9 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "omaplug"
+        },
+        {
           "id": "omarchy.system-update"
         }
       ],
@@ -29,7 +32,7 @@
           "id": "omarchy.menu"
         },
         {
-          "id": "omarchy.workspaces"
+          "id": "tornikegomareli.spaces"
         }
       ],
       "right": [
@@ -55,7 +58,8 @@
           "id": "omarchy.monitor"
         },
         {
-          "id": "omarchy.power"
+          "id": "omarchy.power",
+          "showPercentage": true
         }
       ]
     },
@@ -66,6 +70,13 @@
     "lock": 300,
     "screensaver": 150
   },
-  "plugins": [],
+  "plugins": [
+    {
+      "id": "io.github.mtolhuys.fathom"
+    },
+    {
+      "id": "bobbynicholas.omaland"
+    }
+  ],
   "version": 1
 }

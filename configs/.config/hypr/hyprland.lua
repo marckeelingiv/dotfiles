@@ -27,3 +27,18 @@ require("default.hypr.toggles")
 
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
+
+-- >>> omaland managed block >>>
+-- Written by Omaland. Safe to hand-edit: Omaland re-reads this block
+-- every time it opens, and only ever rewrites what's between the fences.
+o.window(".*", { tag = "-omaland-opaque" })
+if o.transparent_window then
+  o.window({ tag = "negative:transparent-window" }, { tag = "+omaland-opaque" })
+  o.window({ tag = "transparent-window" }, { tag = "-omaland-opaque" })
+else
+  o.window({ tag = "negative:default-opacity" }, { tag = "+omaland-opaque" })
+  o.window({ tag = "chromium-based-browser" }, { tag = "-omaland-opaque" })
+  o.window({ tag = "firefox-based-browser" }, { tag = "-omaland-opaque" })
+end
+o.window({ tag = "omaland-opaque" }, { opacity = "1 override 1 override 1 override" })
+-- <<< omaland managed block <<<

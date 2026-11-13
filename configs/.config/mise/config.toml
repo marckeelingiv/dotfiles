@@ -1,9 +1,12 @@
 [tools]
+claude = "latest"
 flutter = "latest"
 gemini = { version = "latest", allow_builds = ["@github/keytar", "node-pty"] }
 gh = "latest"
 node = "26.1.0"
-opencode = "latest"
+"npm:@xai-official/grok" = "latest"
+"npm:playwright" = "latest"
+opencode = { version = "latest", allow_builds = ["@opencode/cli"] }
 pi = "latest"
 
 [settings.upgrade]

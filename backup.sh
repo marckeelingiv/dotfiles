@@ -122,6 +122,12 @@ RSYNC_EXCLUDES=(
     --exclude='obsidian/[0-9a-f]*.json'
     --exclude='.android/studio/agent/conversations/'
     --exclude='Google/AndroidStudio*/options/recentProjects.xml'
+    --exclude='*.sock'
+    --exclude='*.sock.*'
+    --exclude='*.keystore'
+    --exclude='*.bak'
+    --exclude='*.bak.*'
+    --exclude='*.log.previous'
 )
 
 HOME_CONFIG_DIRS=(
@@ -138,13 +144,43 @@ sync_snapshot() {
     local extra_excludes=()
 
     case "$src" in
-        "$HOME/.claude"|"$HOME/.codex") extra_excludes+=(--exclude='plugins/') ;;
+        "$HOME/.claude") extra_excludes+=(--exclude='plugins/') ;;
+        "$HOME/.codex") extra_excludes+=(
+            --exclude='plugins/'
+            --exclude='app-server-control/'
+            --exclude='app-server-daemon/'
+            --exclude='dictation-history/'
+            --exclude='ipc/'
+            --exclude='node_repl/'
+            --exclude='project-chatgpt-pairing/'
+            --exclude='project-chatgpt-provisioning/'
+            --exclude='project-metadata-locks/'
+            --exclude='rollout-migrations/'
+            --exclude='sqlite/'
+            --exclude='thread-writer-locks/'
+            --exclude='vendor_imports/'
+            --exclude='visualizations/'
+            --exclude='realtime-voice-continuity.json'
+        ) ;;
         "$HOME/.config") extra_excludes+=(
             --exclude='lightdash/'
             --exclude='Google/AndroidStudio*/options/other.xml'
             --exclude='Google/AndroidStudio*/options/trusted-paths.xml'
+            --exclude='Google/AndroidStudio*/ssl/'
+            --exclude='Antigravity/Local State'
+            --exclude='Antigravity/bin/'
+            --exclude='browser-harness/runtime/'
+            --exclude='browser-harness/version-cache.json'
+            --exclude='herdr/session-snapshots/'
+            --exclude='herdr/release-notes.json'
+            --exclude='fcitx/dbus/'
+            --exclude='ibus/bus/'
+            --exclude='opencode/service.json'
+            --exclude='opencode/skill-backups/'
+            --exclude='stripe/'
         ) ;;
         "$HOME/.gemini") extra_excludes+=(--exclude='config/config.json') ;;
+        "$HOME/.pi") extra_excludes+=(--exclude='agent/pi-subagents/last-seen-version.json') ;;
     esac
 
     mkdir -p "$dest"

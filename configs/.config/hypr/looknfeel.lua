@@ -1,5 +1,12 @@
 -- Change the default Omarchy look'n'feel.
 
+hl.config({
+  general = {
+    gaps_in = 2,
+    gaps_out = 2,
+  },
+})
+
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#general
 -- hl.config({
 --   general = {
@@ -48,3 +55,23 @@
 --     column_width = 0.97,
 --   },
 -- })
+
+-- >>> omaland managed block >>>
+-- Written by Omaland. Safe to hand-edit: Omaland re-reads this block
+-- every time it opens, and only ever rewrites what's between the fences.
+hl.config({
+  decoration = {
+    active_opacity = 1,
+    border_part_of_window = true,
+    fullscreen_opacity = 0.95,
+    inactive_opacity = 0.86,
+    rounding = 15,
+    rounding_power = 2.6,
+  },
+
+  general = {
+    gaps_in = 0,
+    layout = "scrolling",
+  },
+})
+-- <<< omaland managed block <<<

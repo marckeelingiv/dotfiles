@@ -27,3 +27,18 @@
 -- o.bind("SUPER + SHIFT + S", nil, "omarchy-capture-screenshot")
 -- o.bind("SUPER + H", nil, "voxtype record toggle")
 -- o.bind("SUPER + PERIOD", nil, "omarchy-shell shell toggle omarchy.emojis")
+
+-- fathom: begin
+do
+  local fathom = os.getenv("HOME") .. "/.config/omarchy/plugins/io.github.mtolhuys.fathom/hypr/fathom.lua"
+  local file = io.open(fathom, "r")
+  if file then
+    file:close()
+    pcall(dofile, fathom)
+  end
+end
+-- fathom: end
+
+-- Replace Omarchy's Voxtype dictation toggle with Handy.
+hl.unbind("SUPER + CTRL + X")
+o.bind("SUPER + CTRL + X", "Handy dictation", "handy --toggle-transcription")

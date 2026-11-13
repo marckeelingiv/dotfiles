@@ -1,0 +1,361 @@
+.pragma library
+
+// Renders and parses Omaland's managed blocks, one per file:
+//
+//   hypr/looknfeel.lua   hl.config / hl.animation
+//   hypr/hyprland.lua    o.window rules, where the stock template's own
+//                        example puts personal window rules
+//
+// Only what's between the fences is ever rewritten. The same text feeds
+// `hyprctl eval` for the live preview, so preview and saved state can't drift.
+
+var BEGIN_FENCE = "-- >>> omaland managed block >>>"
+var END_FENCE = "-- <<< omaland managed block <<<"
+
+var ANIMATION_SPEED_KEY = "omaland:animation_speed"
+var OPAQUE_WINDOWS_KEY = "omaland:opaque_windows"
+var OPAQUE_MEDIA_KEY = "omaland:opaque_media"
+
+var SYNTHETIC_KEYS = [ANIMATION_SPEED_KEY, OPAQUE_WINDOWS_KEY, OPAQUE_MEDIA_KEY]
+
+var OPACITY_KEYS = ["decoration:active_opacity", "decoration:inactive_opacity", "decoration:fullscreen_opacity"]
+var MEDIA_TAG = "omaland-opaque"
+
+// ---------------------------------------------------------------- rendering
+
+function luaNumber(n) {
+  var v = Number(n)
+  if (!isFinite(v)) return "0"
+  if (Math.abs(v - Math.round(v)) < 1e-9) return String(Math.round(v))
+  return String(parseFloat(v.toFixed(4)))
+}
+
+function luaValue(value) {
+  if (typeof value === "boolean") return value ? "true" : "false"
+  if (typeof value === "number") return luaNumber(value)
+  return '"' + String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'
+}
+
+function isSynthetic(key) {
+  return SYNTHETIC_KEYS.indexOf(key) !== -1
+}
+
+function nest(overrides) {
+  var tree = {}
+  for (var key in overrides) {
+    if (isSynthetic(key)) continue
+    var parts = key.split(":")
+    var node = tree
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (!node[parts[i]] || typeof node[parts[i]] !== "object") node[parts[i]] = {}
+      node = node[parts[i]]
+    }
+    node[parts[parts.length - 1]] = overrides[key]
+  }
+  return tree
+}
+
+function isPlainObject(v) {
+  return v !== null && typeof v === "object" && !Array.isArray(v)
+}
+
+// Scalars first, then nested tables — the shape Omarchy's own looknfeel.lua uses.
+function renderTable(node, indent) {
+  var pad = new Array(indent + 1).join(" ")
+  var inner = new Array(indent + 3).join(" ")
+  var keys = Object.keys(node).sort()
+  var lines = []
+  for (var i = 0; i < keys.length; i++)
+    if (!isPlainObject(node[keys[i]]))
+      lines.push(inner + keys[i] + " = " + luaValue(node[keys[i]]) + ",")
+  for (var j = 0; j < keys.length; j++) {
+    if (!isPlainObject(node[keys[j]])) continue
+    if (lines.length > 0) lines.push("")
+    lines.push(inner + keys[j] + " = " + renderTable(node[keys[j]], indent + 2).replace(/^\s+/, "") + ",")
+  }
+  return pad + "{\n" + lines.join("\n") + "\n" + pad + "}"
+}
+
+function renderConfig(overrides) {
+  var tree = nest(overrides)
+  if (Object.keys(tree).length === 0) return ""
+  return "hl.config(" + renderTable(tree, 0) + ")"
+}
+
+// Hyprland's third animation field is a duration in deciseconds, so a faster
+// animation is a smaller number: duration = base / multiplier.
+function renderAnimations(baseline, multiplier) {
+  if (!baseline || baseline.length === 0) return ""
+  var m = Number(multiplier)
+  if (!isFinite(m) || m <= 0) return ""
+  var lines = []
+  for (var i = 0; i < baseline.length; i++) {
+    var leaf = baseline[i]
+    var parts = ['leaf = "' + leaf.leaf + '"', "enabled = " + (leaf.enabled ? "true" : "false")]
+    if (leaf.enabled) {
+      if (leaf.speed !== undefined && leaf.speed !== null)
+        parts.push("speed = " + luaNumber(Math.round(Math.max(0.01, leaf.speed / m) * 100) / 100))
+      if (leaf.bezier) parts.push('bezier = "' + leaf.bezier + '"')
+      if (leaf.style) parts.push('style = "' + leaf.style + '"')
+    }
+    lines.push("hl.animation({ " + parts.join(", ") + " })")
+  }
+  return lines.join("\n")
+}
+
+function renderConfigBody(overrides, baseline) {
+  var chunks = []
+  var config = renderConfig(overrides)
+  if (config) chunks.push(config)
+
+  if (overrides[ANIMATION_SPEED_KEY] !== undefined) {
+    var animations = renderAnimations(baseline, Number(overrides[ANIMATION_SPEED_KEY]))
+    if (animations) chunks.push(animations)
+  }
+  return chunks.join("\n\n")
+}
+
+// Whether any opacity slider is below 1 — the only time the override has
+// anything to undo.
+function lowersOpacity(overrides) {
+  for (var i = 0; i < OPACITY_KEYS.length; i++) {
+    var v = overrides[OPACITY_KEYS[i]]
+    if (v !== undefined && Number(v) < 1) return true
+  }
+  return false
+}
+
+// The decoration:*_opacity globals multiply into every window, including the
+// ones Omarchy means to keep solid, so a lowered slider made those see-through
+// too. These rules tag every window Omarchy doesn't make see-through and pin it
+// at 1 with `override`, which ignores the globals. They follow Omarchy's own
+// tags rather than an app list, so they keep up with it.
+//
+// Which tag says "see-through" changed in Omarchy 4.5, so the block asks at
+// load time rather than Omaland deciding when it writes. That keeps one block
+// right on either side of an upgrade:
+//
+//   4.5+   apps are opaque unless o.transparent_window opts them in with the
+//          transparent-window tag (terminals, and whatever the user adds).
+//          Super + Backspace opts one in while it's open by tagging it, and
+//          only a rule matching that tag runs again when it changes, hence
+//          the explicit hand-back ahead of the override.
+//   4.0    every window carries default-opacity unless an app rule drops it
+//          (media, games, VMs); browsers drop it only to set their own
+//          translucency, so they're handed back.
+//
+// The tag matcher takes one literal name (no regex, no alternation), hence a
+// tag of our own to add and subtract with. Hyprland keeps a rule's tags on open
+// windows after a reload drops the rule, so the tag is cleared from every
+// window first; otherwise a window tagged by an older block stays pinned.
+var MEDIA_TAGGING = [
+  'o.window(".*", { tag = "-' + MEDIA_TAG + '" })',
+  "if o.transparent_window then",
+  '  o.window({ tag = "negative:transparent-window" }, { tag = "+' + MEDIA_TAG + '" })',
+  '  o.window({ tag = "transparent-window" }, { tag = "-' + MEDIA_TAG + '" })',
+  "else",
+  '  o.window({ tag = "negative:default-opacity" }, { tag = "+' + MEDIA_TAG + '" })',
+  '  o.window({ tag = "chromium-based-browser" }, { tag = "-' + MEDIA_TAG + '" })',
+  '  o.window({ tag = "firefox-based-browser" }, { tag = "-' + MEDIA_TAG + '" })',
+  "end"
+].join("\n")
+
+// Switched off, the tagging stays and only the override goes, so "off" is on
+// disk. A block with no media rules at all — every block written before this
+// switch existed — therefore reads as the default rather than as off.
+function renderMediaRules(overrides) {
+  var off = overrides[OPAQUE_MEDIA_KEY] === false
+  if (!off && !lowersOpacity(overrides)) return ""
+  var rules = [MEDIA_TAGGING]
+  if (!off) rules.push('o.window({ tag = "' + MEDIA_TAG + '" }, { opacity = "1 override 1 override 1 override" })')
+  return rules.join("\n")
+}
+
+// Full opacity re-applies Omarchy 4.0's blanket opacity rule at 1.0.
+// Registered after default/hypr/windows.lua, so it wins; the
+// decoration:*_opacity globals still multiply on top, which is what keeps the
+// opacity sliders meaningful. The media rules come after it, so its plain
+// "1 1" can't undo their override. On 4.5 Omarchy owns this switch (Appearance
+// › Window Opacity › Opaque) and Omaland never writes the rule; see Panel.qml.
+function renderWindowsBody(overrides) {
+  var rules = []
+  if (overrides[OPAQUE_WINDOWS_KEY] === true) rules.push('o.window(".*", { opacity = "1 1" })')
+  var media = renderMediaRules(overrides)
+  if (media) rules.push(media)
+  return rules.join("\n")
+}
+
+// Everything Omaland currently asserts, in one chunk, for `hyprctl eval`.
+function renderPreview(overrides, baseline) {
+  var parts = []
+  var config = renderConfigBody(overrides, baseline)
+  var windows = renderWindowsBody(overrides)
+  if (config) parts.push(config)
+  if (windows) parts.push(windows)
+  return parts.join("\n\n")
+}
+
+function renderBlock(body) {
+  var header = BEGIN_FENCE + "\n"
+    + "-- Written by Omaland. Safe to hand-edit: Omaland re-reads this block\n"
+    + "-- every time it opens, and only ever rewrites what's between the fences.\n"
+  if (!body) return header + END_FENCE
+  return header + body + "\n" + END_FENCE
+}
+
+// ------------------------------------------------------------------ parsing
+
+// read.lua runs a chunk against recording stubs and prints one tab-separated
+// record per line. Turning that into state is a split, not a parser.
+//
+//   k  <key:path>  <type>  <value>
+//   a  <leaf>  <enabled>  <speed>  <bezier>  <style>
+//   w  <match>  <opacity>
+//   t  <match>  <tag>
+function parseHarness(stdout) {
+  var result = { overrides: {}, animations: [], opaque: false, mediaTagged: false, mediaOverride: false }
+  var lines = String(stdout || "").split("\n")
+
+  for (var i = 0; i < lines.length; i++) {
+    var f = lines[i].split("\t")
+    if (f[0] === "k" && f.length >= 4) {
+      result.overrides[f[1]] = f[2] === "number" ? Number(f[3])
+        : f[2] === "boolean" ? f[3] === "true"
+        : f[3]
+    } else if (f[0] === "a" && f.length >= 6) {
+      result.animations.push({
+        leaf: f[1],
+        enabled: f[2] === "true",
+        speed: f[3] === "" ? undefined : Number(f[3]),
+        bezier: f[4],
+        style: f[5]
+      })
+    } else if (f[0] === "w" && f.length >= 3) {
+      if (f[1] === ".*") result.opaque = true
+      else if (f[1] === "tag:" + MEDIA_TAG) result.mediaOverride = true
+    } else if (f[0] === "t" && f.length >= 3) {
+      if (f[2] === "+" + MEDIA_TAG) result.mediaTagged = true
+    }
+  }
+  return result
+}
+
+// The multiplier is whatever the block's animations are scaled by, measured
+// against the shipped baseline on a leaf both define.
+function animationSpeedFrom(animations, baseline) {
+  for (var i = 0; i < baseline.length; i++) {
+    var base = baseline[i]
+    if (!base.speed) continue
+    for (var j = 0; j < animations.length; j++) {
+      if (animations[j].leaf !== base.leaf || !animations[j].speed) continue
+      return Math.round((base.speed / animations[j].speed) * 20) / 20
+    }
+  }
+  return undefined
+}
+
+
+
+
+
+// Blocks written by earlier Omaland versions, rewritten in place once:
+//
+//   - media tagging from before the 4.5 branch. On 4.5 nothing carries
+//     default-opacity, so it pinned every window and the sliders reached
+//     nothing but browsers.
+//   - on 4.5, the blanket Full opacity rule. It ran after Omarchy's floating
+//     workspaces pin their windows with `override`, and wiped that out; the
+//     caller hands the choice to Omarchy's own Opaque mode instead.
+//
+// Only Omaland's own exact lines are touched. Returns the new text and whether
+// Full opacity was taken out.
+var LEGACY_MEDIA_TAGGING = [
+  'o.window({ tag = "negative:default-opacity" }, { tag = "+' + MEDIA_TAG + '" })',
+  'o.window({ tag = "chromium-based-browser" }, { tag = "-' + MEDIA_TAG + '" })',
+  'o.window({ tag = "firefox-based-browser" }, { tag = "-' + MEDIA_TAG + '" })'
+].join("\n")
+var LEGACY_FULL_OPACITY = 'o.window(".*", { opacity = "1 1" })'
+
+function migrateWindowsBlock(text, omarchyOwnsOpacity) {
+  var split = splitBlock(text)
+  var result = { text: String(text || ""), removedFullOpacity: false }
+  if (!split.found) return result
+
+  var lines = split.body.split("\n")
+  if (omarchyOwnsOpacity) {
+    var kept = lines.filter(function(line) { return line !== LEGACY_FULL_OPACITY })
+    result.removedFullOpacity = kept.length !== lines.length
+    lines = kept
+  }
+  var body = lines.join("\n")
+  if (body.indexOf("o.transparent_window") === -1)
+    body = body.replace(LEGACY_MEDIA_TAGGING, MEDIA_TAGGING)
+
+  if (body !== split.body) result.text = split.before + BEGIN_FENCE + body + END_FENCE + split.after
+  return result
+}
+
+// Which options Omarchy's Appearance toggles hold. The toggle scan prints
+//
+//   shipped  <name>     a toggle this Omarchy ships
+//   active   <name>     one the user has switched on, followed by read.lua's
+//                       records for Omarchy's own copy of it
+//
+// and every `k` record after an `active` line belongs to that toggle. Omarchy
+// loads toggles in sorted order, as the scan walks them, so when two set the
+// same option the later one holds it.
+function parseToggles(stdout) {
+  var result = { shipped: [], active: [], locks: {} }
+  var current = ""
+  var lines = String(stdout || "").split("\n")
+  for (var i = 0; i < lines.length; i++) {
+    var f = lines[i].split("\t")
+    if (f[0] === "shipped" && f[1]) result.shipped.push(f[1])
+    else if (f[0] === "active" && f[1]) { current = f[1]; result.active.push(current) }
+    else if (f[0] === "k" && f.length >= 4 && current) result.locks[f[1]] = current
+  }
+  return result
+}
+
+// The default Appearance › Workspace Layout saves, as Omarchy itself reads it
+// back. Floating isn't a Hyprland layout and leaves general:layout alone.
+function workspaceLayoutDefault(text) {
+  var match = String(text || "").match(/default\s*=\s*"([a-z]+)"/)
+  return match ? match[1] : ""
+}
+
+function splitBlock(text) {
+  var source = String(text || "")
+  var begin = source.indexOf(BEGIN_FENCE)
+  if (begin === -1) return { found: false, before: source, body: "", after: "" }
+  var endFence = source.indexOf(END_FENCE, begin)
+  if (endFence === -1) return { found: false, before: source, body: "", after: "" }
+  return {
+    found: true,
+    before: source.substring(0, begin),
+    body: source.substring(begin + BEGIN_FENCE.length, endFence),
+    after: source.substring(endFence + END_FENCE.length)
+  }
+}
+
+
+// An empty body removes the block rather than leaving an empty husk.
+function applyBlock(text, body) {
+  var split = splitBlock(text)
+
+  if (!body) {
+    if (!split.found) return String(text || "")
+    var joined = split.before.replace(/\n+$/, "\n") + split.after.replace(/^\n+/, "")
+    return joined.replace(/\n{3,}$/, "\n")
+  }
+
+  var block = renderBlock(body)
+  if (split.found) return split.before + block + split.after
+
+  var head = String(text || "")
+  if (head.length > 0 && head.charAt(head.length - 1) !== "\n") head += "\n"
+  return head + "\n" + block + "\n"
+}
+
+// --------------------------------------------------- animation baseline
+

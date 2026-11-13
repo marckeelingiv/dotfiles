@@ -43,4 +43,4 @@ workon() {
 
 # Added by Antigravity CLI installer
 export PATH="/home/marc/.local/bin:$PATH"
-alias oc-oai='OPENCODE_CONFIG="$HOME/.config/opencode/openai.json" opencode'
+alias oc-fire='OPENCODE_CONFIG="$HOME/.config/opencode/fireworks.json" opencode'

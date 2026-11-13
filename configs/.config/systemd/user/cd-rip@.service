@@ -1,0 +1,7 @@
+[Unit]
+Description=Rip audio CD in /dev/%I
+
+[Service]
+Type=oneshot
+Environment=PYTHONPATH=/home/marc/Music/ripping/src
+ExecStart=/usr/bin/python -m ripping --device /dev/%I

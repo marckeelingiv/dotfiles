@@ -1,0 +1,3 @@
+hg4idea
+PerforceDirectPlugin
+Subversion

@@ -43,7 +43,7 @@ Sign in again to Git, AI providers, cloud CLIs, browsers, and password managers.
 ## What's backed up
 
 - All portable settings in `~/.config/`, including desktop, terminal, editor, and application configuration.
-- AI-tool configuration in `~/.agents/`, `~/.antigravitycli/`, `~/.claude/`, `~/.codex/`, `~/.gemini/`, and `~/.pi/`.
+- AI-tool configuration in `~/.agents/`, `~/.claude/`, `~/.codex/`, `~/.gemini/`, and `~/.pi/`.
 - Shell configuration: `~/.bashrc`, `~/.profile`, `~/.zshrc`, and `~/.XCompose` when present.
 - System udev rules in `/etc/udev/rules.d/`.
 
